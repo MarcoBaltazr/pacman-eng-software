@@ -20,6 +20,12 @@ const pacmanVelocity = 30;
 const ghostSize = 60;
 const topScoreBoardHeight = 100;
 
+const ghostVelocityByDifficulty: Record<Difficulty, number> = {
+  [DIFFICULTY.EASY]: 15,
+  [DIFFICULTY.MEDIUM]: 20,
+  [DIFFICULTY.ADVANCED]: 30,
+};
+
 const generateFoodMatrix = (props: SceneProps, amountOfFood: number) => {
   let currentTop = 0;
   let currentLeft = 0;
@@ -62,19 +68,7 @@ const Scene = (props: SceneProps) => {
     difficulty,
   } = useGameContext();
 
-  const [ghostVelocity, setGhostVelocity] = React.useState(20);
-
-  React.useEffect(() => {
-    if (difficulty === DIFFICULTY.EASY) {
-      setGhostVelocity(15);
-    }
-    if (difficulty === DIFFICULTY.MEDIUM) {
-      setGhostVelocity(20);
-    }
-    if (difficulty === DIFFICULTY.ADVANCED) {
-      setGhostVelocity(30);
-    }
-  }, [difficulty]);
+  const ghostVelocity = ghostVelocityByDifficulty[difficulty];
 
   React.useEffect(() => {
     const amountOfFood =
