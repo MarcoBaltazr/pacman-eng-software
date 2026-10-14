@@ -8,6 +8,7 @@ import { useInterval } from "../hooks/useInterval";
 import { COLOR } from "../types/color";
 import { GAME_STATUS } from "../types/gameStatus";
 import colors from "../styles/Colors";
+import { calculateNextPosition } from "../utils/movement";
 
 interface StyledPacmanProps {
   direction: Direction;
@@ -69,45 +70,7 @@ const Pacman = (props: Character) => {
 
   function move() {
     if (gameStatus === GAME_STATUS.IN_PROGRESS) {
-      const currentLeft = position.left;
-      const currentTop = position.top;
-      let newPosition: Position = { top: 0, left: 0 };
-      switch (direction) {
-        case DIRECTION.LEFT:
-          newPosition = {
-            top: currentTop,
-            left: Math.max(currentLeft - props.velocity, 0),
-          };
-          break;
-        case DIRECTION.UP:
-          newPosition = {
-            top: Math.max(currentTop - props.velocity, 0),
-            left: currentLeft,
-          };
-          break;
-        case DIRECTION.RIGHT:
-          newPosition = {
-            top: currentTop,
-            left: Math.min(
-              currentLeft + props.velocity,
-              window.innerWidth - props.border - props.size
-            ),
-          };
-          break;
-
-        default:
-          newPosition = {
-            top: Math.min(
-              currentTop + props.velocity,
-              window.innerHeight -
-                props.size -
-                props.border -
-                props.topScoreBoard
-            ),
-            left: currentLeft,
-          };
-      }
-      setPacmanPosition(newPosition);
+      setPacmanPosition(calculateNextPosition(position, direction, props));
     }
     if (gameStatus === GAME_STATUS.LOST) {
       setColor(COLOR.PACMAN_DEAD);

@@ -7,6 +7,7 @@ import { useGameContext } from "../context/GameContext";
 import { useInterval } from "../hooks/useInterval";
 import { COLOR } from "../types/color";
 import { GAME_STATUS } from "../types/gameStatus";
+import { calculateNextPosition } from "../utils/movement";
 
 interface StyledGhostProps {
   position: Position;
@@ -76,45 +77,7 @@ const Ghost = (props: Character) => {
       }
 
       setPosition((oldPosition: Position) => {
-        const currentLeft = position.left;
-        const currentTop = position.top;
-        let newPosition: Position = { top: 0, left: 0 };
-
-        switch (direction) {
-          case DIRECTION.LEFT:
-            newPosition = {
-              top: currentTop,
-              left: Math.max(currentLeft - props.velocity, 0),
-            };
-            break;
-          case DIRECTION.UP:
-            newPosition = {
-              top: Math.max(currentTop - props.velocity, 0),
-              left: currentLeft,
-            };
-            break;
-          case DIRECTION.RIGHT:
-            newPosition = {
-              top: currentTop,
-              left: Math.min(
-                currentLeft + props.velocity,
-                window.innerWidth - props.border - props.size
-              ),
-            };
-            break;
-
-          default:
-            newPosition = {
-              top: Math.min(
-                currentTop + props.velocity,
-                window.innerHeight -
-                  props.size -
-                  props.border -
-                  props.topScoreBoard
-              ),
-              left: currentLeft,
-            };
-        }
+        const newPosition = calculateNextPosition(position, direction, props);
         if (
           pacmanPosition.left > newPosition.left - props.size &&
           pacmanPosition.left < newPosition.left + props.size &&
