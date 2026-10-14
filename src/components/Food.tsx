@@ -4,13 +4,12 @@ import { Position } from "../types/position";
 import colors from "../styles/Colors";
 import { useGameContext } from "../context/GameContext";
 import { GAME_STATUS } from "../types/gameStatus";
+import { isPacmanOverFood } from "../utils/collision";
 
 interface StyledFoodProps {
   position: Position;
   hidden: boolean;
 }
-
-const eatPrecision = 18;
 
 export type FoodProps = {
   name: string;
@@ -41,13 +40,7 @@ const Food = (props: FoodProps) => {
   React.useEffect(() => {
     if (
       !isHidden &&
-      pacmanPosition.left + (props.pacmanSize - eatPrecision) / 2 >=
-        position.left &&
-      pacmanPosition.left - (props.pacmanSize - eatPrecision) / 2 <
-        position.left &&
-      pacmanPosition.top + (props.pacmanSize - eatPrecision) / 2 >=
-        position.top &&
-      pacmanPosition.top - (props.pacmanSize - eatPrecision) / 2 < position.top
+      isPacmanOverFood(pacmanPosition, position, props.pacmanSize)
     ) {
       eaten();
       if (foodAmount === points + 1) {

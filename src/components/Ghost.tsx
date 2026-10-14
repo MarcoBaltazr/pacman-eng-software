@@ -8,6 +8,7 @@ import { useInterval } from "../hooks/useInterval";
 import { COLOR } from "../types/color";
 import { GAME_STATUS } from "../types/gameStatus";
 import { calculateNextPosition } from "../utils/movement";
+import { isTouchingGhost } from "../utils/collision";
 
 interface StyledGhostProps {
   position: Position;
@@ -78,12 +79,7 @@ const Ghost = (props: Character) => {
 
       setPosition((oldPosition: Position) => {
         const newPosition = calculateNextPosition(position, direction, props);
-        if (
-          pacmanPosition.left > newPosition.left - props.size &&
-          pacmanPosition.left < newPosition.left + props.size &&
-          pacmanPosition.top > newPosition.top - props.size &&
-          pacmanPosition.top < newPosition.top + props.size
-        ) {
+        if (isTouchingGhost(pacmanPosition, newPosition, props.size)) {
           setGameStatus(GAME_STATUS.LOST);
         }
 
