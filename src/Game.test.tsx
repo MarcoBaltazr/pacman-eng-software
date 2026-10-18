@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import App from "./App";
 import { ARROW } from "./types/direction";
 
-// jsdom window is 1024x768, which gives a 16x10 food matrix
+// jsdom window is 1024x768, which gives a 16x10 grid with 34 walls
 
 const TICK = 100;
 
@@ -16,7 +16,7 @@ function tick(times = 1) {
 }
 
 function score() {
-  return screen.getByText(/\/ 160/).textContent;
+  return screen.getByText(/\/ 126/).textContent;
 }
 
 function pressArrow(keyCode: ARROW) {
@@ -68,7 +68,7 @@ test("starts paused, with the difficulty selector and the food counter", () => {
   expect(screen.getByText("PACMAN")).toBeInTheDocument();
   expect(screen.getByText("Set Difficulty")).toBeInTheDocument();
   expect(screen.getByRole("combobox")).toHaveValue("medium");
-  expect(score()).toBe("1 / 160");
+  expect(score()).toBe("1 / 126");
 });
 
 test("nothing moves while the game is paused", () => {
@@ -76,7 +76,7 @@ test("nothing moves while the game is paused", () => {
 
   tick(20);
 
-  expect(score()).toBe("1 / 160");
+  expect(score()).toBe("1 / 126");
   expect(pacmanPosition(container)).toEqual({ left: "0px", top: "0px" });
   ghostPositions(container).forEach((position) =>
     expect(position).toEqual({ left: "300px", top: "300px" })
@@ -104,7 +104,7 @@ test("pacman moves right and eats the food along the first row", () => {
   tick(10);
 
   expect(pacmanPosition(container)).toEqual({ left: "300px", top: "0px" });
-  expect(score()).toBe("6 / 160");
+  expect(score()).toBe("6 / 126");
 });
 
 test("pacman stops at the right border", () => {
@@ -169,7 +169,7 @@ test("arrow keys change pacman direction", () => {
   pressArrow(ARROW.DOWN);
   tick(4);
   expect(pacmanPosition(container)).toEqual({ left: "0px", top: "120px" });
-  expect(score()).toBe("3 / 160");
+  expect(score()).toBe("3 / 126");
 
   pressArrow(ARROW.RIGHT);
   tick(2);
@@ -191,7 +191,7 @@ test("pacman does not leave the top and left borders", () => {
   pressArrow(ARROW.UP);
   tick(5);
   expect(pacmanPosition(container)).toEqual({ left: "0px", top: "0px" });
-  expect(score()).toBe("1 / 160");
+  expect(score()).toBe("1 / 126");
 });
 
 test("pacman stops at the bottom border", () => {
@@ -243,6 +243,6 @@ test("try again restarts score and time", () => {
   fireEvent.click(screen.getByText("Try Again"));
 
   expect(screen.queryByText("GAME OVER :(")).not.toBeInTheDocument();
-  expect(score()).toBe("1 / 160");
+  expect(score()).toBe("1 / 126");
   expect(timeElapsed()).toBe("0");
 });

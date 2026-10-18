@@ -2,12 +2,14 @@ import React from "react";
 import Pacman from "./Pacman";
 import Ghost from "./Ghost";
 import Food from "./Food";
+import Wall from "./Wall";
 import styled from "styled-components";
 import colors from "../styles/Colors";
 import { useGameContext } from "../context/GameContext";
 import { GAME_STATUS } from "../types/gameStatus";
 import { COLOR } from "../types/color";
 import { DIFFICULTY, Difficulty } from "../types/difficulty";
+import { isWallCell, wallPositions } from "../utils/walls";
 
 type SceneProps = {
   foodSize: number;
@@ -26,33 +28,39 @@ const ghostVelocityByDifficulty: Record<Difficulty, number> = {
   [DIFFICULTY.ADVANCED]: 30,
 };
 
-const generateFoodMatrix = (props: SceneProps, amountOfFood: number) => {
-  let currentTop = 0;
-  let currentLeft = 0;
+const gridSize = (props: SceneProps) => {
+  return {
+    columns: Math.floor((window.innerWidth - props.border) / props.foodSize),
+    rows: Math.floor(
+      (window.innerHeight - props.border - props.topScoreBoard) / props.foodSize
+    ),
+  };
+};
+
+const generateFoodMatrix = (props: SceneProps) => {
+  const { columns, rows } = gridSize(props);
   const foods = [];
 
-  for (let i = 0; i <= amountOfFood; i++) {
-    if (currentLeft + props.foodSize >= window.innerWidth - props.border) {
-      currentTop += props.foodSize;
-      currentLeft = 0;
+  for (let row = 0; row < rows; row++) {
+    for (let column = 0; column < columns; column++) {
+      if (isWallCell(column, row)) {
+        continue;
+      }
+      const i = foods.length;
+      const position = {
+        left: column * props.foodSize,
+        top: row * props.foodSize,
+      };
+      foods.push(
+        <Food
+          pacmanSize={pacmanSize}
+          hidden={false}
+          name={"food" + i}
+          position={position}
+          key={i}
+        />
+      );
     }
-    if (
-      currentTop + props.foodSize >=
-      window.innerHeight - props.border - props.topScoreBoard
-    ) {
-      break;
-    }
-    const position = { left: currentLeft, top: currentTop };
-    currentLeft = currentLeft + props.foodSize;
-    foods.push(
-      <Food
-        pacmanSize={pacmanSize}
-        hidden={false}
-        name={"food" + i}
-        position={position}
-        key={i}
-      />
-    );
   }
   return foods;
 };
@@ -63,22 +71,20 @@ const Scene = (props: SceneProps) => {
     restartGame,
     setDifficulty,
     setGameStatus,
-    foodAmount,
+    setWalls,
     gameStatus,
     difficulty,
+    walls,
   } = useGameContext();
 
   const ghostVelocity = ghostVelocityByDifficulty[difficulty];
 
   React.useEffect(() => {
-    const amountOfFood =
-      Math.floor((window.innerWidth - props.border) / props.foodSize) *
-      Math.floor(
-        (window.innerHeight - props.border - props.topScoreBoard) /
-          props.foodSize
-      );
+    const { columns, rows } = gridSize(props);
+    const wallsInGrid = wallPositions(columns, rows);
 
-    setFoodAmount(amountOfFood);
+    setWalls(wallsInGrid);
+    setFoodAmount(columns * rows - wallsInGrid.length);
   }, []);
 
   return (
@@ -132,7 +138,10 @@ const Scene = (props: SceneProps) => {
           </CenterContainer>
         </OverlayContent>
       )}
-      {generateFoodMatrix(props, foodAmount)}
+      {walls.map((position, i) => (
+        <Wall position={position} key={i} />
+      ))}
+      {generateFoodMatrix(props)}
       <Pacman
         velocity={pacmanVelocity}
         size={pacmanSize}

@@ -9,10 +9,12 @@ type GameContextType = {
   pacmanPosition: Position;
   points: number;
   difficulty: Difficulty;
+  walls: Position[];
   setFoodAmount: (foodAmount: number) => void;
   setPacmanPosition: (position: Position) => void;
   setPoints: (points: number) => void;
   setDifficulty: (difficulty: Difficulty) => void;
+  setWalls: (walls: Position[]) => void;
   setGameStatus: (gameStatus: GameStatus) => void;
   restartGame: () => void;
 };
@@ -23,12 +25,14 @@ const contextDefaultValues: GameContextType = {
   pacmanPosition: { top: 0, left: 0 },
   points: 0,
   difficulty: DIFFICULTY.MEDIUM,
+  walls: [],
   setFoodAmount: () => {},
   setPacmanPosition: () => {},
   setPoints: () => {},
   setGameStatus: () => {},
   restartGame: () => {},
   setDifficulty: () => {},
+  setWalls: () => {},
 };
 
 const GameContext = createContext<GameContextType>(contextDefaultValues);
@@ -58,6 +62,8 @@ export function GameProvider({ children }: Props) {
     contextDefaultValues.gameStatus
   );
 
+  const [walls, _setWalls] = useState<Position[]>(contextDefaultValues.walls);
+
   const setFoodAmount = (foodAmount: number) => {
     _setFoodAmount(foodAmount);
   };
@@ -77,6 +83,10 @@ export function GameProvider({ children }: Props) {
     _setDifficulty(difficulty);
   };
 
+  const setWalls = (walls: Position[]) => {
+    _setWalls(walls);
+  };
+
   const restartGame = () => {
     _setPoints(0);
     _setGameStatus(GAME_STATUS.IN_PROGRESS);
@@ -92,12 +102,14 @@ export function GameProvider({ children }: Props) {
     pacmanPosition,
     points,
     difficulty,
+    walls,
     restartGame,
     setFoodAmount,
     setGameStatus,
     setPacmanPosition,
     setPoints,
     setDifficulty,
+    setWalls,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
