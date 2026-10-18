@@ -1,4 +1,7 @@
 import { Position } from "../types/position";
+import { DIRECTION, Direction } from "../types/direction";
+import { Character } from "../types/character";
+import { calculateNextPosition } from "./movement";
 
 export const wallSize = 60;
 
@@ -49,4 +52,37 @@ export function hitsWall(
       position.top < wall.top + wallSize &&
       position.top + size > wall.top
   );
+}
+
+// when the way is blocked, tries to slide up to one step to line up with an opening
+export function moveAvoidingWalls(
+  position: Position,
+  direction: Direction,
+  character: Character,
+  walls: Position[]
+): Position | null {
+  const horizontal =
+    direction === DIRECTION.LEFT || direction === DIRECTION.RIGHT;
+  const offset = (horizontal ? position.top : position.left) % wallSize;
+  const shifts = [0];
+  if (offset !== 0 && offset <= character.velocity) {
+    shifts.push(-offset);
+  }
+  if (offset !== 0 && wallSize - offset <= character.velocity) {
+    shifts.push(wallSize - offset);
+  }
+
+  for (const shift of shifts) {
+    const start = horizontal
+      ? { top: position.top + shift, left: position.left }
+      : { top: position.top, left: position.left + shift };
+    const next = calculateNextPosition(start, direction, character);
+    if (
+      !hitsWall(start, character.size, walls) &&
+      !hitsWall(next, character.size, walls)
+    ) {
+      return next;
+    }
+  }
+  return null;
 }

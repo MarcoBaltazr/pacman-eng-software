@@ -1,4 +1,21 @@
-import { hitsWall, isWallCell, wallPositions } from "./walls";
+import {
+  hitsWall,
+  isWallCell,
+  moveAvoidingWalls,
+  wallPositions,
+} from "./walls";
+import { DIRECTION } from "../types/direction";
+import { Character } from "../types/character";
+
+// jsdom window is 1024x768
+const pacman: Character = {
+  velocity: 30,
+  size: 60,
+  border: 20,
+  topScoreBoard: 100,
+  color: "yellow",
+  name: "pacman",
+};
 
 function reachableCells(columns: number, rows: number) {
   const visited = new Set(["0,0"]);
@@ -79,4 +96,34 @@ test("detects a character overlapping a wall", () => {
   expect(hitsWall({ top: 120, left: 60 }, 60, walls)).toBe(false);
   expect(hitsWall({ top: 60, left: 120 }, 60, walls)).toBe(false);
   expect(hitsWall({ top: 120, left: 180 }, 60, walls)).toBe(false);
+});
+
+test("moves normally when there is no wall ahead", () => {
+  expect(
+    moveAvoidingWalls({ top: 0, left: 0 }, DIRECTION.RIGHT, pacman, [])
+  ).toEqual({ top: 0, left: 30 });
+});
+
+test("does not move into a wall", () => {
+  const walls = [{ top: 60, left: 0 }];
+
+  expect(
+    moveAvoidingWalls({ top: 0, left: 0 }, DIRECTION.DOWN, pacman, walls)
+  ).toBeNull();
+});
+
+test("slides into an opening next to a wall", () => {
+  const walls = [{ top: 60, left: 0 }];
+
+  expect(
+    moveAvoidingWalls({ top: 0, left: 30 }, DIRECTION.DOWN, pacman, walls)
+  ).toEqual({ top: 30, left: 60 });
+});
+
+test("does not slide more than one step", () => {
+  const walls = [{ top: 60, left: 0 }];
+
+  expect(
+    moveAvoidingWalls({ top: 0, left: 10 }, DIRECTION.DOWN, pacman, walls)
+  ).toBeNull();
 });

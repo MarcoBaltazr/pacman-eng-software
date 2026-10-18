@@ -8,7 +8,7 @@ import { useInterval } from "../hooks/useInterval";
 import { COLOR } from "../types/color";
 import { GAME_STATUS } from "../types/gameStatus";
 import colors from "../styles/Colors";
-import { calculateNextPosition } from "../utils/movement";
+import { moveAvoidingWalls } from "../utils/walls";
 
 interface StyledPacmanProps {
   direction: Direction;
@@ -25,8 +25,12 @@ const Pacman = (props: Character) => {
     pacmanPosition: position,
     setPacmanPosition,
     gameStatus,
+    walls,
   } = useGameContext();
   const [direction, setDirection] = React.useState<Direction>(DIRECTION.RIGHT);
+  const [nextDirection, setNextDirection] = React.useState<Direction>(
+    DIRECTION.RIGHT
+  );
   const [color, setColor] = React.useState<string>(props.color);
   useInterval(move, 100);
 
@@ -34,16 +38,16 @@ const Pacman = (props: Character) => {
     function rotate(keypressed: number) {
       switch (keypressed) {
         case ARROW.LEFT:
-          setDirection(DIRECTION.LEFT);
+          setNextDirection(DIRECTION.LEFT);
           break;
         case ARROW.UP:
-          setDirection(DIRECTION.UP);
+          setNextDirection(DIRECTION.UP);
           break;
         case ARROW.RIGHT:
-          setDirection(DIRECTION.RIGHT);
+          setNextDirection(DIRECTION.RIGHT);
           break;
         default:
-          setDirection(DIRECTION.DOWN);
+          setNextDirection(DIRECTION.DOWN);
       }
     }
 
@@ -70,7 +74,16 @@ const Pacman = (props: Character) => {
 
   function move() {
     if (gameStatus === GAME_STATUS.IN_PROGRESS) {
-      setPacmanPosition(calculateNextPosition(position, direction, props));
+      const turned = moveAvoidingWalls(position, nextDirection, props, walls);
+      if (turned) {
+        setDirection(nextDirection);
+        setPacmanPosition(turned);
+      } else {
+        const ahead = moveAvoidingWalls(position, direction, props, walls);
+        if (ahead) {
+          setPacmanPosition(ahead);
+        }
+      }
     }
     if (gameStatus === GAME_STATUS.LOST) {
       setColor(COLOR.PACMAN_DEAD);

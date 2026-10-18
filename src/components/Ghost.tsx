@@ -9,6 +9,7 @@ import { COLOR } from "../types/color";
 import { GAME_STATUS } from "../types/gameStatus";
 import { calculateNextPosition } from "../utils/movement";
 import { isTouchingGhost } from "../utils/collision";
+import { hitsWall } from "../utils/walls";
 
 interface StyledGhostProps {
   position: Position;
@@ -41,7 +42,7 @@ const GhostIcon = () => (
 );
 
 const Ghost = (props: Character) => {
-  const { pacmanPosition, setGameStatus, gameStatus } = useGameContext();
+  const { pacmanPosition, setGameStatus, gameStatus, walls } = useGameContext();
   const [position, setPosition] = React.useState<Position>(ghostStartPosition);
   const [direction, setDirection] = React.useState<Direction>(DIRECTION.LEFT);
   const [color, setColor] = React.useState<string>(props.color!);
@@ -77,8 +78,15 @@ const Ghost = (props: Character) => {
         });
       }
 
+      const nextPosition = calculateNextPosition(position, direction, props);
+      const blocked = hitsWall(nextPosition, props.size, walls);
+      if (blocked) {
+        // forces a new random direction on the next tick
+        setChangeDirectionWaitingTime(5);
+      }
+
       setPosition((oldPosition: Position) => {
-        const newPosition = calculateNextPosition(position, direction, props);
+        const newPosition = blocked ? oldPosition : nextPosition;
         if (isTouchingGhost(pacmanPosition, newPosition, props.size)) {
           setGameStatus(GAME_STATUS.LOST);
         }
