@@ -51,6 +51,16 @@ function ghostPositions(container: HTMLElement) {
   );
 }
 
+function wallPositionsOnScreen() {
+  return screen.getAllByTestId("wall").map(positionOf);
+}
+
+function foodPositions(container: HTMLElement) {
+  return Array.from(container.querySelectorAll(".effective-food")).map((food) =>
+    positionOf(food.parentElement!)
+  );
+}
+
 beforeEach(() => {
   jest.useFakeTimers();
   jest.spyOn(Math, "random").mockReturnValue(0);
@@ -246,3 +256,137 @@ test("try again restarts score and time", () => {
   expect(score()).toBe("1 / 126");
   expect(timeElapsed()).toBe("0");
 });
+
+function moveGhostsBelowWall() {
+  jest
+    .spyOn(Math, "random")
+    .mockReturnValueOnce(0.9)
+    .mockReturnValueOnce(0.9)
+    .mockReturnValueOnce(0.9)
+    .mockReturnValue(0.3);
+  fireEvent.click(screen.getByText("Play!"));
+
+  // left until the first direction change, then right back to (300, 300)
+  tick(12);
+}
+
+test("shows the walls of the map", () => {
+  render(<App />);
+
+  const walls = wallPositionsOnScreen();
+  expect(walls).toHaveLength(34);
+  expect(walls).toContainEqual({ left: "120px", top: "120px" });
+  expect(walls).toContainEqual({ left: "300px", top: "60px" });
+  expect(walls).toContainEqual({ left: "600px", top: "480px" });
+});
+
+test("there is no food on the walls", () => {
+  const { container } = render(<App />);
+
+  const foods = foodPositions(container);
+  expect(foods).toHaveLength(126);
+  wallPositionsOnScreen().forEach((wall) =>
+    expect(foods).not.toContainEqual(wall)
+  );
+  expect(score()).toBe("1 / 126");
+});
+
+test("pacman stops in front of a wall", () => {
+  const { container } = render(<App />);
+  fireEvent.click(screen.getByText("Play!"));
+  tick(4);
+
+  pressArrow(ARROW.DOWN);
+  tick(10);
+
+  expect(pacmanPosition(container)).toEqual({ left: "120px", top: "60px" });
+  expect(score()).toBe("4 / 126");
+});
+
+test("pacman moves again after turning away from a wall", () => {
+  const { container } = render(<App />);
+  fireEvent.click(screen.getByText("Play!"));
+  tick(4);
+  pressArrow(ARROW.DOWN);
+  tick(10);
+
+  pressArrow(ARROW.RIGHT);
+  tick(2);
+
+  expect(pacmanPosition(container)).toEqual({ left: "180px", top: "60px" });
+});
+
+test("pacman keeps going and turns when the way opens", () => {
+  const { container } = render(<App />);
+  fireEvent.click(screen.getByText("Play!"));
+  tick(10);
+
+  // the wall below spans from 300px to 660px
+  pressArrow(ARROW.DOWN);
+  tick(11);
+  expect(pacmanPosition(container)).toEqual({ left: "630px", top: "0px" });
+
+  tick(1);
+  expect(pacmanPosition(container)).toEqual({ left: "660px", top: "30px" });
+});
+
+test("ghosts do not cross walls", () => {
+  const { container } = render(<App />);
+  moveGhostsBelowWall();
+
+  tick(10);
+
+  ghostPositions(container).forEach((position) =>
+    expect(position).toEqual({ left: "300px", top: "240px" })
+  );
+});
+
+test("a blocked ghost picks a new direction on the next tick", () => {
+  const { container } = render(<App />);
+  moveGhostsBelowWall();
+  tick(10);
+
+  jest.spyOn(Math, "random").mockReturnValue(0.9);
+  tick(2);
+
+  ghostPositions(container).forEach((position) =>
+    expect(position).toEqual({ left: "320px", top: "240px" })
+  );
+});
+
+test("try again keeps the same walls", () => {
+  render(<App />);
+  const walls = wallPositionsOnScreen();
+  playUntilGhostReachesPacman();
+  tick(5);
+
+  fireEvent.click(screen.getByText("Try Again"));
+
+  expect(wallPositionsOnScreen()).toEqual(walls);
+  expect(score()).toBe("1 / 126");
+});
+
+test.each([
+  [1920, 1080, 100, 396],
+  [980, 768, 34, 126],
+])(
+  "walls and food follow a %px%p window",
+  (width, height, wallCount, foodCount) => {
+    const { innerWidth, innerHeight } = window;
+    window.innerWidth = width;
+    window.innerHeight = height;
+
+    try {
+      const { container } = render(<App />);
+
+      expect(screen.getAllByTestId("wall")).toHaveLength(wallCount);
+      expect(foodPositions(container)).toHaveLength(foodCount);
+      expect(screen.getByText(new RegExp("/ " + foodCount)).textContent).toBe(
+        "1 / " + foodCount
+      );
+    } finally {
+      window.innerWidth = innerWidth;
+      window.innerHeight = innerHeight;
+    }
+  }
+);
